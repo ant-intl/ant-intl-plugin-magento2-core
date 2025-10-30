@@ -1,0 +1,215 @@
+<?xml version="1.0"?>
+
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <virtualType name="AntomPaymentAlipayCnConfig" type="Magento\Payment\Gateway\Config\Config">
+        <arguments>
+            <argument name="methodCode" xsi:type="string">antom_alipay_cn</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="AntomPaymentValidatorPool" type="Magento\Payment\Gateway\Validator\ValidatorPool">
+        <arguments>
+            <argument name="validators" xsi:type="array">
+                <item name="country" xsi:type="string">AntomCountryValidator</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="AntomCountryValidator" type="Magento\Payment\Gateway\Validator\CountryValidator">
+        <arguments>
+            <argument name="config" xsi:type="object">AntomPaymentAlipayCnConfig</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="AntomPaymentCommandPool" type="Magento\Payment\Gateway\Command\CommandPool">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="initialize" xsi:type="string">AntomPaymentAuthorizeCommand</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="AntomPaymentAuthorizeCommand" type="Magento\Payment\Gateway\Command\GatewayCommand">
+        <arguments>
+            <argument name="requestBuilder" xsi:type="object">AntomAmsPayRequestBuilder</argument>
+            <argument name="transferFactory" xsi:type="object">Antom\Core\Gateway\Http\TransferFactory</argument>
+            <argument name="client" xsi:type="object">Antom\Core\Gateway\Http\Client\AmsPayClient</argument>
+            <argument name="validator" xsi:type="object">Antom\Core\Gateway\Validator\AmsPayRedirectResponseValidator
+            </argument>
+            <argument name="handler" xsi:type="object">AmsPayRedirectResponseHandlerChain</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="AmsPayRedirectResponseHandlerChain" type="Magento\Payment\Gateway\Response\HandlerChain">
+        <arguments>
+            <argument name="handlers" xsi:type="array">
+                <item name="payments" xsi:type="string">
+                    Antom\Core\Gateway\Response\Handler\AmsPayRedirectResponseHandler
+                </item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+
+    <virtualType name="AntomAmsPayRequestBuilder" type="Magento\Payment\Gateway\Request\BuilderComposite">
+        <arguments>
+            <argument name="builders" xsi:type="array">
+                <item name="http" xsi:type="string">Antom\Core\Gateway\Request\AmsPayHttpBuilder</item>
+                <item name="order" xsi:type="string">Antom\Core\Gateway\Request\AmsPayOrderBuilder</item>
+                <item name="env" xsi:type="string">Antom\Core\Gateway\Request\AmsEnvBuilder</item>
+                <item name="paymentMethod" xsi:type="string">Antom\Core\Gateway\Request\AmsPaymentMethodBuilder</item>
+                <item name="paymentAmount" xsi:type="string">Antom\Core\Gateway\Request\AmsPaymentAmountBuilder</item>
+                <item name="settlementStrategy" xsi:type="string">
+                    Antom\Core\Gateway\Request\AmsSettlementStrategyBuilder
+                </item>
+                <item name="paymentFactor" xsi:type="string">Antom\Core\Gateway\Request\AmsPaymentFactorBuilder</item>
+                <!--                solution changed, merchant should go to Antom portal to configure the webhook-->
+                <!--                <item name="payNotifyUrl" xsi:type="string">-->
+                <!--                    Antom\Core\Gateway\Request\AmsPayNotifyUrlBuilder-->
+                <!--                </item>-->
+                <item name="paymentRequestId" xsi:type="string">Antom\Core\Gateway\Request\AmsPaymentRequestIdBuilder
+                </item>
+                <item name="headers" xsi:type="string">Antom\Core\Gateway\Request\Header\AmsHeaderBuilder</item>
+                <item name="redirectUrl" xsi:type="string">Antom\Core\Gateway\Request\AmsRedirectUrlBuilder</item>
+                <item name="productCode" xsi:type="string">Antom\Core\Gateway\Request\AmsProductCodeBuilder</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="AtomPaymentAlipayCnFacade" type="Magento\Payment\Model\Method\Adapter">
+        <arguments>
+            <argument name="code" xsi:type="string">antom_alipay_cn</argument>
+            <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
+            <argument name="infoBlockType" xsi:type="string">Magento\Payment\Block\ConfigurableInfo</argument>
+            <argument name="valueHandlerPool" xsi:type="object">AntomPaymentAlipayCnValueHandlerPool</argument>
+            <argument name="validatorPool" xsi:type="object">AntomPaymentValidatorPool</argument>
+            <argument name="commandPool" xsi:type="object">AntomPaymentCommandPool</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="AntomPaymentAlipayCnValueHandlerPool" type="Magento\Payment\Gateway\Config\ValueHandlerPool">
+        <arguments>
+            <argument name="handlers" xsi:type="array">
+                <item name="default" xsi:type="string">AntomPaymentAlipayCnConfigValueHandler</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="AntomPaymentCardValueHandlerPool" type="Magento\Payment\Gateway\Config\ValueHandlerPool">
+        <arguments>
+            <argument name="handlers" xsi:type="array">
+                <item name="default" xsi:type="string">AntomPaymentCardConfigValueHandler</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="AntomPaymentAlipayCnConfigValueHandler" type="Magento\Payment\Gateway\Config\ConfigValueHandler">
+        <arguments>
+            <argument name="configInterface" xsi:type="object">AntomPaymentAlipayCnConfig</argument>
+        </arguments>
+    </virtualType>
+
+
+    <virtualType name="AntomPaymentCardConfigValueHandler" type="Magento\Payment\Gateway\Config\ConfigValueHandler">
+        <arguments>
+            <argument name="configInterface" xsi:type="object">AntomPaymentCardConfig</argument>
+        </arguments>
+    </virtualType>
+
+
+    <virtualType name="AntomPaymentCardConfig" type="Magento\Payment\Gateway\Config\Config">
+        <arguments>
+            <argument name="methodCode" xsi:type="string">antom_card</argument>
+        </arguments>
+    </virtualType>
+
+
+    <virtualType name="AntomCardPaymentMethodFacade" type="Magento\Payment\Model\Method\Adapter">
+        <arguments>
+            <argument name="code" xsi:type="string">antom_card</argument>
+            <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
+            <argument name="infoBlockType" xsi:type="string">Magento\Payment\Block\ConfigurableInfo</argument>
+            <argument name="valueHandlerPool" xsi:type="object">AntomPaymentCardValueHandlerPool</argument>
+            <argument name="validatorPool" xsi:type="object">AntomPaymentValidatorPool</argument>
+            <argument name="commandPool" xsi:type="object">AntomCardPaymentCommandPool</argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="AntomCardPaymentCommandPool" type="Magento\Payment\Gateway\Command\CommandPool">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="initialize" xsi:type="string">AntomCardPaymentAuthorizeCommand</item>
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <virtualType name="AntomCardPaymentAuthorizeCommand" type="Magento\Payment\Gateway\Command\GatewayCommand">
+        <arguments>
+            <argument name="requestBuilder" xsi:type="object">AntomAmsPayRequestBuilder</argument>
+            <argument name="transferFactory" xsi:type="object">Antom\Core\Gateway\Http\TransferFactory</argument>
+            <argument name="client" xsi:type="object">Antom\Core\Gateway\Http\Client\AmsPayClient</argument>
+            <argument name="handler" xsi:type="object">AmsPayRedirectResponseHandlerChain</argument>
+            <argument name="validator" xsi:type="object">Antom\Core\Gateway\Validator\AmsPayRedirectResponseValidator
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <!--Sensitive and system-specific configuration-->
+    <type name="Magento\Config\Model\Config\TypePool">
+        <arguments>
+            <argument name="environment" xsi:type="array">
+                <item name="antom/general/environment" xsi:type="string">1</item>
+                <item name="antom/general/debug" xsi:type="string">1</item>
+            </argument>
+            <argument name="sensitive" xsi:type="array">
+                <item name="antom/general/antom_request_url" xsi:type="string">1</item>
+                <item name="antom/general/antom_client_id" xsi:type="string">1</item>
+                <item name="antom/general/antom_public_key" xsi:type="string">1</item>
+                <item name="antom/general/merchant_private_key" xsi:type="string">1</item>
+                <item name="antom/general/antom_sandbox_request_url" xsi:type="string">1</item>
+                <item name="antom/general/antom_sandbox_client_id" xsi:type="string">1</item>
+                <item name="antom/general/antom_sandbox_public_key" xsi:type="string">1</item>
+                <item name="antom/general/merchant_sandbox_private_key" xsi:type="string">1</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="Antom\Core\Logger\Handler\AntomDebug">
+        <arguments>
+            <argument name="filesystem" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+        </arguments>
+    </type>
+    <type name="Antom\Core\Logger\Handler\AntomInfo">
+        <arguments>
+            <argument name="filesystem" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+        </arguments>
+    </type>
+    <type name="Antom\Core\Logger\Handler\AntomError">
+        <arguments>
+            <argument name="filesystem" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+        </arguments>
+    </type>
+    <type name="Antom\Core\Logger\Handler\AntomWarning">
+        <arguments>
+            <argument name="filesystem" xsi:type="object">Magento\Framework\Filesystem\Driver\File</argument>
+        </arguments>
+    </type>
+    <type name="Antom\Core\Logger\AntomLogger">
+        <arguments>
+            <argument name="handlers" xsi:type="array">
+                <item name="antomDebug" xsi:type="object">Antom\Core\Logger\Handler\AntomDebug</item>
+                <item name="antomInfo" xsi:type="object">Antom\Core\Logger\Handler\AntomInfo</item>
+                <item name="antomError" xsi:type="object">Antom\Core\Logger\Handler\AntomError</item>
+                <item name="antomWarning" xsi:type="object">Antom\Core\Logger\Handler\AntomWarning</item>
+            </argument>
+            <argument name="processors" xsi:type="array">
+                <item name="uid" xsi:type="object">Monolog\Processor\UidProcessor</item>
+                <item name="psr3" xsi:type="object">Monolog\Processor\PsrLogMessageProcessor</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="Magento\Payment\Model\Method\Adapter">
+        <plugin name="antom_card_is_active_plugin" type="Antom\Core\Plugin\PaymentMethodIsActivePlugin" sortOrder="10" />
+    </type>
+    <preference for="Magento\Store\Model\StoreManagerInterface" type="Magento\Store\Model\StoreManager"/>
+    <preference for="Antom\Core\Api\GuestAntomOrderPaymentStatusInterface"
+                type="Antom\Core\Model\Api\GuestAntomOrderPaymentStatus"/>
+    <preference for="Antom\Core\Api\AntomOrderPaymentStatusInterface"
+                type="Antom\Core\Model\Api\AntomOrderPaymentStatus"/>
+</config>
+

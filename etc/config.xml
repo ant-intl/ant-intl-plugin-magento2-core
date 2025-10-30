@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <payment>
+            <antom_alipay_cn>
+                <model>AtomPaymentAlipayCnFacade</model>
+                <order_status>pending</order_status>
+                <payment_action>authorize</payment_action>
+                <allowspecific>1</allowspecific>
+                <specificcountry>US</specificcountry>
+                <can_initialize>1</can_initialize>
+                <group>antom_ac_wallet</group>
+            </antom_alipay_cn>
+            <antom_card>
+                <model>AntomCardPaymentMethodFacade</model>
+                <payment_action>authorize</payment_action>
+                <allowspecific>1</allowspecific>
+                <can_initialize>1</can_initialize>
+                <specificcountry>US</specificcountry>
+                <group>antom_card_payment</group>
+            </antom_card>
+        </payment>
+    </default>
+</config>

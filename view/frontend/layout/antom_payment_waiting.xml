@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <title>Payment Received</title>
+    </head>
+    <body>
+        <referenceBlock name="page.main.title">
+            <block class="Magento\Checkout\Block\Onepage\Success" name="checkout.success.print.button" template="Magento_Checkout::button.phtml"/>
+            <action method="setPageTitle">
+                <argument translate="true" name="title" xsi:type="string">Thank you for your purchase!</argument>
+            </action>
+        </referenceBlock>
+
+        <referenceContainer name="content">
+            <block class="Antom\Core\Block\Payment\Waiting" name="payment.waiting" template="Antom_Core::waiting.phtml" cacheable="false">
+                <container name="order.payment.additional.info" label="Order Payment Waiting"/>
+            </block>
+        </referenceContainer>
+    </body>
+</page>
+

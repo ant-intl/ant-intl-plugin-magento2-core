@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+    <event name="sales_order_payment_place_end">
+        <observer name="antom_sales_order_payment_place_end_order_status"
+                  instance="Antom\Core\Observer\SetOrderStateAfterPaymentObserver"/>
+    </event>
+    <event name="sales_model_service_quote_submit_success">
+        <observer name="antom_sales_model_service_quote_submit_success_quote_status"
+                  instance="Antom\Core\Observer\QuoteStatusObserver"/>
+    </event>
+
+    <event name="payment_method_assign_data_antom_card">
+        <observer name="custom_assign_data" instance="Antom\Core\Observer\AssignDataObserver" />
+    </event>
+</config>

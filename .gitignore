@@ -1,0 +1,21 @@
+# Build and test artifacts
+build/
+
+# Composer
+vendor/
+composer.lock
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Cache
+.phpunit.result.cache
+.php_cs.cache
