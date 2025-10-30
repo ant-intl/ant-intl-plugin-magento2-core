@@ -1,0 +1,235 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+
+    strategy:
+      matrix:
+        include:
+          - php-version: 7.4
+            phpunit-version: "^9.5"
+          - php-version: 8.1
+            phpunit-version: "^10.0"
+          - php-version: 8.2
+            phpunit-version: "^10.0"
+
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: bcmath, ctype, curl, dom, gd, hash, iconv, intl, mbstring, openssl, pdo_mysql, simplexml, soap, xsl, zip
+          tools: composer:v2
+          coverage: xdebug
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ matrix.php-version }}-${{ hashFiles('**/composer.json.ci') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-${{ matrix.php-version }}-
+            ${{ runner.os }}-composer-
+
+      - name: Configure Magento authentication
+        run: |
+          mkdir -p $HOME/.composer
+          echo '{"http-basic": {"repo.magento.com": {"username": "${{ secrets.MAGENTO_USERNAME }}", "password": "${{ secrets.MAGENTO_PASSWORD }}"}}}' > $HOME/.composer/auth.json
+
+      - name: Debug - Check files before setup
+        run: |
+          echo "Files in root directory:"
+          ls -la
+          echo "Checking if composer.json.ci exists:"
+          if [ -f "composer.json.ci" ]; then
+            echo "✅ composer.json.ci found"
+          else
+            echo "❌ composer.json.ci not found"
+          fi
+
+      - name: Setup CI environment
+        run: |
+          # 检查文件存在
+          if [ ! -f "composer.json.ci" ]; then
+            echo "❌ composer.json.ci not found!"
+            exit 1
+          fi
+          
+          # 备份原始 composer.json
+          cp composer.json composer.json.backup
+          
+          # 使用 CI 版本的 composer.json
+          cp composer.json.ci composer.json
+          
+          echo "✅ Switched to CI composer.json"
+          
+          # 验证 composer.json 格式
+          composer validate --no-check-all
+
+      - name: Install dependencies
+        run: |
+          composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Verify installation
+        run: |
+          echo "🔍 Verifying installation..."
+          php -v
+          composer show --installed | head -10
+
+      - name: Run PHP Syntax Check
+        run: |
+          echo "🔍 Checking PHP syntax..."
+          find . -name "*.php" -not -path "./vendor/*" -not -path "./build/*" -exec php -l {} \;
+
+      - name: Debug PHPUnit configuration
+        run: |
+          echo "🔍 Checking PHPUnit configuration..."
+          if [ -f "phpunit.xml.dist" ]; then
+            echo "✅ phpunit.xml.dist found"
+            echo "Bootstrap configuration:"
+            grep -n "bootstrap" phpunit.xml.dist || echo "No bootstrap found in config"
+          fi
+          
+          if [ -f "Test/bootstrap.php" ]; then
+            echo "✅ Test/bootstrap.php found"
+            echo "File size: $(stat -c%s Test/bootstrap.php 2>/dev/null || echo 'unknown')"
+          else
+            echo "❌ Test/bootstrap.php not found"
+            echo "Files in Test directory:"
+            ls -la Test/ || echo "Test directory not found"
+          fi
+
+      - name: Create coverage directory
+        run: |
+          mkdir -p build/coverage
+
+      - name: Clear PHPUnit cache
+        run: |
+          if [ -d ".phpunit.cache" ]; then
+            rm -rf .phpunit.cache
+            echo "✅ Cleared PHPUnit cache"
+          fi
+
+      - name: Run PHPUnit tests with coverage
+        run: |
+          echo "🧪 Running Unit Tests with coverage..."
+          if [ -f "vendor/bin/phpunit" ]; then
+            if [[ '${{ matrix.php-version }}' < '8.0' ]]; then
+              CONFIG="phpunit9.xml.dist"
+            else
+              CONFIG="phpunit10.xml.dist"
+            fi
+            echo "Using configuration: $CONFIG"
+            echo "Command: vendor/bin/phpunit --configuration $CONFIG --coverage-clover=build/coverage/clover.xml --coverage-xml=build/coverage/coverage-xml --log-junit=build/coverage/junit.xml --testdox"
+            vendor/bin/phpunit \
+              --configuration "$CONFIG" \
+              --coverage-clover=build/coverage/clover.xml \
+              --coverage-xml=build/coverage/coverage-xml \
+              --log-junit=build/coverage/junit.xml \
+              --testdox
+          else
+            echo "PHPUnit not found, skipping tests"
+            exit 1
+          fi
+
+      - name: Check test results
+        run: |
+          echo "📊 Test Results Summary:"
+          if [ -f "build/coverage/junit.xml" ]; then
+            # 解析测试结果
+            TESTS=$(grep -o 'tests="[0-9]*"' build/coverage/junit.xml | grep -o '[0-9]*' || echo "0")
+            FAILURES=$(grep -o 'failures="[0-9]*"' build/coverage/junit.xml | grep -o '[0-9]*' || echo "0")
+            ERRORS=$(grep -o 'errors="[0-9]*"' build/coverage/junit.xml | grep -o '[0-9]*' || echo "0")
+            SKIPPED=$(grep -o 'skipped="[0-9]*"' build/coverage/junit.xml | grep -o '[0-9]*' || echo "0")
+          
+            echo "Total Tests: $TESTS"
+            echo "Failures: $FAILURES"
+            echo "Errors: $ERRORS"
+            echo "Skipped: $SKIPPED"
+          
+            # 如果有失败或错误，退出
+            if [ "$FAILURES" -gt "0" ] || [ "$ERRORS" -gt "0" ]; then
+              echo "❌ Tests failed with $FAILURES failures and $ERRORS errors"
+              exit 1
+            else
+              echo "✅ All tests passed (with $SKIPPED skipped)"
+            fi
+          else
+            echo "⚠️ No test results found"
+          fi
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./build/coverage/clover.xml
+          directory: ./build/coverage/
+          flags: unittests
+          name: antom-core-coverage
+          fail_ci_if_error: false
+          verbose: true
+
+      - name: Archive coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-reports-php${{ matrix.php-version }}
+          path: |
+            build/coverage/
+          retention-days: 30
+
+      - name: Archive test logs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-logs-php${{ matrix.php-version }}
+          path: |
+            *.log
+            build/
+          retention-days: 7
+
+      - name: Basic validation summary
+        if: always()
+        run: |
+          echo "## 🎯 CI Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| PHP Version | ${{ matrix.php-version }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Module | Antom Core |" >> $GITHUB_STEP_SUMMARY
+          echo "| PHP Files | $(find . -name '*.php' -not -path './vendor/*' -not -path './build/*' | wc -l) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Files | $(find Test/ -name '*Test.php' 2>/dev/null | wc -l || echo 0) |" >> $GITHUB_STEP_SUMMARY
+          if [ -f "build/coverage/clover.xml" ]; then
+            echo "| Coverage Report | Generated ✅ |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| Coverage Report | Not generated ❌ |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "| Status | ${{ job.status }} |" >> $GITHUB_STEP_SUMMARY
+          
+          echo ""
+          echo "✅ CI validation complete"
+          echo "📊 PHP version: ${{ matrix.php-version }}"
+          echo "🏗️ Antom Core Module"
+          echo "📁 PHP files: $(find . -name '*.php' -not -path './vendor/*' -not -path './build/*' | wc -l)"
+          echo "📋 Test files: $(find Test/ -name '*Test.php' 2>/dev/null | wc -l || echo 0)"
+          if [ -f "build/coverage/clover.xml" ]; then
+            echo "📊 Coverage report: Generated"
+          else
+            echo "📊 Coverage report: Not generated"
+          fi
+          echo "🎯 Status: ${{ job.status }}"

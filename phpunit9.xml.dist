@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.0/phpunit.xsd"
+         bootstrap="Test/bootstrap.php"
+         colors="true"
+         testdox="true"
+         cacheDirectory=".phpunit.cache"
+         failOnWarning="false"
+         failOnDeprecation="false"
+         failOnNotice="false">
+
+    <testsuites>
+        <testsuite name="unit">
+            <directory>Test/Unit</directory>
+        </testsuite>
+    </testsuites>
+
+<!--    <source>-->
+<!--        <include>-->
+<!--            <directory suffix=".php">.</directory>-->
+<!--        </include>-->
+<!--        <exclude>-->
+<!--            <directory>vendor</directory>-->
+<!--            <directory>Test</directory>-->
+<!--            <directory>build</directory>-->
+<!--            <file>registration.php</file>-->
+<!--        </exclude>-->
+<!--    </source>-->
+
+    <coverage>
+        <include>
+            <directory suffix=".php">.</directory>
+        </include>
+        <exclude>
+            <directory>vendor</directory>
+            <directory>Test</directory>
+            <directory>build</directory>
+            <file>registration.php</file>
+        </exclude>
+        <report>
+            <clover outputFile="build/coverage/clover.xml"/>
+            <html outputDirectory="build/coverage/html"/>
+            <xml outputDirectory="build/coverage/coverage-xml"/>
+        </report>
+    </coverage>
+
+    <logging>
+        <junit outputFile="build/coverage/junit.xml"/>
+    </logging>
+</phpunit>

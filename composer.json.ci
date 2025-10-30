@@ -1,0 +1,72 @@
+{
+    "name": "antom-magento/magento2-core",
+    "description": "Antom core module for Magento 2 - CI Environment",
+    "type": "magento2-module",
+    "license": ["MIT"],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+
+    "require": {
+        "php": ">=7.4",
+        "antom/global-open-sdk-php": "~1.4.7",
+        "magento/framework": ">=103.0.2",
+        "magento/module-sales": ">=103.0.2",
+        "magento/module-checkout": ">=100.4.2",
+        "magento/module-payment": ">=100.4.2",
+        "magento/module-quote": ">=101.2.2",
+        "magento/module-store": ">=101.1.2",
+        "magento/module-customer": ">=103.0.2",
+        "magento/module-csp": ">=100.4.1"
+    },
+
+    "require-dev": {
+        "phpunit/phpunit": "^9.5 || ^10.0",
+        "php-http/mock-client": "^1.3",
+        "magento/magento-coding-standard": "^22.0 || ^28.0 || ^31.0 || ^33.0 || ^35.0",
+        "object-calisthenics/phpcs-calisthenics-rules": "^3.5 || ^3.7 || ^3.8 || ^3.9",
+        "phpstan/phpstan": "^1.10"
+    },
+
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://repo.magento.com/"
+        }
+    ],
+
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Antom\\Core\\": ""
+        }
+    },
+
+    "autoload-dev": {
+        "psr-4": {
+            "Antom\\Core\\Test\\": "Test/"
+        }
+    },
+
+    "scripts": {
+        "test": "vendor/bin/phpunit --configuration phpunit.xml.dist",
+        "test-unit": "vendor/bin/phpunit --configuration phpunit.xml.dist --testsuite=unit",
+        "test-coverage": [
+            "mkdir -p build/coverage",
+            "vendor/bin/phpunit --configuration phpunit.xml.dist --coverage-html build/coverage --coverage-clover build/coverage/clover.xml"
+        ],
+        "cs-check": "vendor/bin/phpcs --standard=Magento2 --ignore=vendor,build .",
+        "phpstan": "vendor/bin/phpstan analyse --no-progress"
+    },
+
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true,
+            "magento/composer-dependency-version-audit-plugin": false,
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "sort-packages": true,
+        "optimize-autoloader": true
+    }
+}
