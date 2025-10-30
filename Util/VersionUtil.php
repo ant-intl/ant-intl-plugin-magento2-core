@@ -10,9 +10,8 @@ use Magento\Framework\HTTP\Adapter\CurlFactory;
 
 class VersionUtil
 {
-    // TODO: FIX the github link
     private const ANTOM_MAGENTO_GITHUB_REPO_LINK
-        = 'https://api.github.com/repos/alipay/global-open-sdk-php/releases/latest';
+        = 'https://api.github.com/repos/ant-intl/ant-intl-plugin-magento2/releases/latest';
 
     /**
      * @var JsonHandler
