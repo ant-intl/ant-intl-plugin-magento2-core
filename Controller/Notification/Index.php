@@ -232,9 +232,9 @@ class Index implements HttpPostActionInterface, CsrfAwareActionInterface
      * @return void
      * @throws \Magento\Framework\Exception\NoSuchEntityException
      */
-    private function inactiveQuoteIfNecessary(int|null $quoteId)
+    private function inactiveQuoteIfNecessary(?int $quoteId)
     {
-        if (!isset($quoteId)) {
+        if ($quoteId === null) {
             return;
         }
         // inactive quote if still active

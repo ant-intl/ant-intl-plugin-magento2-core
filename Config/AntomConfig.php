@@ -150,9 +150,13 @@ class AntomConfig
      * @param bool $flag true if the field is set to 0/1, false if the field is other type
      * @return mixed
      */
-    private function getConfig(string $field, int|string|null $storeId, bool $flag = false,
-                               string $pattern = self::DEFAULT_PATH_PATTERN): mixed
+    private function getConfig(string $field, $storeId, bool $flag = false,
+                               string $pattern = self::DEFAULT_PATH_PATTERN)
     {
+        if ($storeId !== null && !is_int($storeId) && !is_string($storeId)) {
+            throw new \InvalidArgumentException('Store ID must be int, string or null');
+        }
+        
         $path = sprintf($pattern, $field);
 
         $scope = $storeId === null

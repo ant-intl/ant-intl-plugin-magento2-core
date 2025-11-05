@@ -42,8 +42,7 @@ class AmsPayOrderBuilder implements BuilderInterface
         RequestHelper         $requestHelper,
         StoreManagerInterface $storeManager,
         CustomerSession       $customerSession,
-        CheckoutSession       $checkoutSession,
-    )
+        CheckoutSession       $checkoutSession)
     {
         $this->requestHelper = $requestHelper;
         $this->storeManager = $storeManager;

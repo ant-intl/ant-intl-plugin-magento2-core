@@ -7,7 +7,6 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Phrase;
 use Magento\Sales\Model\Order as MagentoOrder;
 use Magento\Store\Model\StoreManagerInterface;
-use Monolog\Level;
 use Monolog\Logger;
 use Monolog\LoggerFactory;
 
@@ -19,6 +18,31 @@ class AntomLogger
     const ANTOM_ERROR = 401;
 
     /**
+     * @var AntomConfig
+     */
+    private $config;
+
+    /**
+     * @var StoreManagerInterface
+     */
+    private $storeManager;
+
+    /**
+     * @var LoggerFactory
+     */
+    private $loggerFactory;
+
+    /**
+     * @var array
+     */
+    private $handlers;
+
+    /**
+     * @var array
+     */
+    private $processors;
+
+    /**
      * @param AntomConfig $config
      * @param StoreManagerInterface $storeManager
      * @param LoggerFactory $loggerFactory
@@ -26,13 +50,17 @@ class AntomLogger
      * @param array $processors
      */
     public function __construct(
-        private readonly AntomConfig                $config,
-        private readonly StoreManagerInterface $storeManager,
-        private readonly LoggerFactory         $loggerFactory,
-        private array                          $handlers = [],
-        private array                          $processors = []
-    )
-    {
+        AntomConfig $config,
+        StoreManagerInterface $storeManager,
+        LoggerFactory $loggerFactory,
+        array $handlers = [],
+        array $processors = []
+    ) {
+        $this->config = $config;
+        $this->storeManager = $storeManager;
+        $this->loggerFactory = $loggerFactory;
+        $this->handlers = $handlers;
+        $this->processors = $processors;
     }
 
 
@@ -47,7 +75,7 @@ class AntomLogger
         $storeId = $this->storeManager->getStore()->getId();
         if ($this->config->debugLogsEnabled($storeId)) {
             $logger = $this->generateLogger(self::ANTOM_DEBUG);
-            return $logger->addRecord(Level::Debug, $message, $context);
+            return $logger->addRecord(Logger::DEBUG, $message, $context);
         } else {
             return false;
         }
@@ -61,7 +89,7 @@ class AntomLogger
     public function addAntomWarning(string $message, array $context = []): bool
     {
         $logger = $this->generateLogger(self::ANTOM_WARNING);
-        return $logger->addRecord(Level::Warning, $message, $context);
+        return $logger->addRecord(Logger::WARNING, $message, $context);
     }
 
 
@@ -77,18 +105,22 @@ class AntomLogger
     public function addAntomInfoLog(string $message, array $context = []): bool
     {
         $logger = $this->generateLogger(self::ANTOM_INFO);
-        return $logger->addRecord(Level::Info, $message, $context);
+        return $logger->addRecord(LOGGER::INFO, $message, $context);
     }
 
     /**
-     * @param string $message
+     * @param string|\Stringable $message
      * @param array $context
      * @return void
      */
-    public function error(string|\Stringable $message, array $context = []): void
+    public function error($message, array $context = []): void
     {
+        if (!is_string($message) && !(is_object($message) && method_exists($message, '__toString'))) {
+            throw new \InvalidArgumentException('Message must be string or Stringable object');
+        }
+
         $logger = $this->generateLogger(self::ANTOM_ERROR);
-        $logger->addRecord(Level::Error, $message, $context);
+        $logger->addRecord(Logger::ERROR, (string)$message, $context);
     }
 
     public function getOrderContext(MagentoOrder $order): array

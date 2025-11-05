@@ -27,7 +27,9 @@ class AmsPaymentMethodBuilder implements BuilderInterface
         $paymentDataObject = SubjectReader::readPayment($buildSubject);
         $payment = $paymentDataObject->getPayment();
         $magentoPaymentMethod = $payment->getMethod();
-        $paymentMethodType = self::ANTOM_PAYMENT_METHOD_MAPPING[$magentoPaymentMethod];
+        $paymentMethodType = ($magentoPaymentMethod == null
+            || !array_key_exists($magentoPaymentMethod, self::ANTOM_PAYMENT_METHOD_MAPPING))
+            ? '' : self::ANTOM_PAYMENT_METHOD_MAPPING[$magentoPaymentMethod];
         if (strcasecmp($paymentMethodType, 'CARD') == 0) {
             $paymentMethod[AntomConstants::PAYMENT_METHOD_ID] = $payment->getAdditionalInformation(AntomConstants::CARD_TOKEN);
         }
@@ -35,7 +37,7 @@ class AmsPaymentMethodBuilder implements BuilderInterface
         $additionalInformation = $payment->getAdditionalInformation();
         unset($additionalInformation[AntomConstants::CARD_TOKEN]);
         $payment->setAdditionalInformation($additionalInformation);
-        
+
         $paymentMethod[AntomConstants::PAYMENT_METHOD_TYPE] = $paymentMethodType;
         return [
             AntomConstants::PAYMENT_METHOD => $paymentMethod

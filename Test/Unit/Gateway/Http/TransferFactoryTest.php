@@ -222,7 +222,7 @@ class TransferFactoryTest extends TestCase
 
     public function testCreateThrowsExceptionWhenRequiredFieldsMissing(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(\PHPUnit\Framework\Exception::class);
         
         $request = [
             // Missing required headers

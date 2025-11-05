@@ -56,7 +56,7 @@ class PaymentRequest implements SectionSourceInterface
         AntomLogger $logger,
         AntomConfig $config,
         ResolverInterface $localeResolver,
-        Session $session,
+        Session $session
     ) {
         $this->logger = $logger;
         $this->config = $config;

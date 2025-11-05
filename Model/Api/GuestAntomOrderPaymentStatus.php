@@ -72,7 +72,13 @@ class GuestAntomOrderPaymentStatus implements GuestAntomOrderPaymentStatusInterf
         $referenceOrderId = $order->getIncrementId();
 
         $additionalInformation = $payment->getAdditionalInformation();
-        $paymentStatus = $additionalInformation[AntomConstants::PAYMENT_STATUS];
+
+        if ($additionalInformation == null || $additionalInformation[AntomConstants::PAYMENT_STATUS] == null) {
+            $this->antomLogger->error("PaymentStatus not exist, mark it as fail");
+            $paymentStatus = AntomConstants::FAIL;
+        } else {
+            $paymentStatus = $additionalInformation[AntomConstants::PAYMENT_STATUS];
+        }
         $is3ds = strtolower($paymentStatus) === 'initiated' ? true : false;
         $paymentMethod = $payment->getMethod();
 
