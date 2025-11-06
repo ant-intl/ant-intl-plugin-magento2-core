@@ -1,7 +1,7 @@
 {
     "name": "antom-magento/magento2-core",
     "description": "Antom core module for Magento 2",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "type": "magento2-module",
     "license": ["MIT"],
     "minimum-stability": "stable",
