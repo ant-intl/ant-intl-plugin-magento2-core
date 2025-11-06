@@ -15,7 +15,7 @@
         </testsuite>
     </testsuites>
 
-    <source>
+    <coverage>
         <include>
             <directory suffix=".php">.</directory>
         </include>
@@ -25,7 +25,12 @@
             <directory>build</directory>
             <file>registration.php</file>
         </exclude>
-    </source>
+        <report>
+            <clover outputFile="build/coverage/clover.xml"/>
+            <html outputDirectory="build/coverage/html"/>
+            <xml outputDirectory="build/coverage/coverage-xml"/>
+        </report>
+    </coverage>
 
     <coverage>
         <report>
