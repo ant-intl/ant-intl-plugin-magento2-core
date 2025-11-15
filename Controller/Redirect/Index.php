@@ -134,11 +134,34 @@ class Index implements HttpGetActionInterface
                     __('Inquiry paymentStatus failed for order ' . $order->getIncrementId())
                 );
             } elseif ($inquiryResult == AntomConstants::SUCCESS) {
-                // When the payment is success, inactive quote and redirect to the success page
-                $quote = $this->quoteRepository->get($order->getQuoteId());
-                $quote->setIsActive(false);
-                $this->quoteRepository->save($quote);
-                $url = self::SUCCESS_URL;
+                $this->antomLogger->addAntomInfoLog(
+                    sprintf(
+                        'Session Info - LastRealOrderId: %s, LastQuoteId: %s',
+                        $this->session->getLastRealOrderId(),
+                        $this->session->getLastQuoteId()
+                    )
+                );
+
+                try {
+                    // When the payment is success, inactive quote and redirect to the success page
+                    $quote = $this->quoteRepository->get($order->getQuoteId());
+                    $quote->setIsActive(false);
+                    $this->quoteRepository->save($quote);
+                    $this->antomLogger->addAntomInfoLog('Quote deactivated successfully for order: ' . $order->getIncrementId());
+
+                    // Restore checkout session data so success page works
+                    $this->session->setLastQuoteId($quote->getId())
+                        ->setLastSuccessQuoteId($quote->getId())
+                        ->setLastRealOrderId($order->getIncrementId())
+                        ->setLastOrderId($order->getId())
+                        ->setLastOrderStatus($order->getStatus());
+
+                    $this->antomLogger->addAntomInfoLog('Setting success session for order: ' . $order->getIncrementId());
+                    $url = self::SUCCESS_URL;
+                } catch (\Exception $e) {
+                    $this->antomLogger->error('Error processing success: ' . $e->getMessage());
+                    $url = self::FAILURE_URL;
+                }
             } else {
                 $url = self::FAILURE_URL;
             }
