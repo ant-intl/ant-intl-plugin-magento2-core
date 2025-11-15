@@ -79,6 +79,10 @@ class AmsPayClient implements ClientInterface
         );
         if (isset($body[AntomConstants::PAYMENT_METHOD][AntomConstants::PAYMENT_METHOD_ID])) {
             $paymentMethod->setPaymentMethodId($body[AntomConstants::PAYMENT_METHOD][AntomConstants::PAYMENT_METHOD_ID]);
+            $mockData = [
+                "is3DSAuthentication" => "true"
+            ];
+            $paymentMethod->setPaymentMethodMetaData($mockData);
         }
         $request->setPaymentMethod($paymentMethod);
 
