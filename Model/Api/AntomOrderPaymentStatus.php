@@ -91,15 +91,14 @@ class AntomOrderPaymentStatus implements AntomOrderPaymentStatusInterface
                     "message" => $warningMessage
                 ]);
             }
-            $paymentAction = $additionalInformation[AntomConstants::PAYMENT_ACTION];
+
             $paymentStatus = $additionalInformation[AntomConstants::PAYMENT_STATUS];
-            $is3ds = strtolower($paymentStatus) === 'initiated' ? true : false;
+
             $result = [
+                AntomConstants::PAYMENT_METHOD => $paymentMethod,
                 AntomConstants::PAYMENT_STATUS => $paymentStatus,
-                AntomConstants::PAYMENT_ACTION => json_decode($paymentAction, true),
                 "message" => AntomConstants::SUCCESS,
-                AntomConstants::REFERENCE_ORDER_ID => $referenceOrderId,
-                AntomConstants::IS_3DS => $is3ds
+                AntomConstants::REFERENCE_ORDER_ID => $referenceOrderId
             ];
             return json_encode($result);
         }

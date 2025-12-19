@@ -95,6 +95,11 @@ class AmsPayRedirectResponseHandler implements HandlerInterface
 
     }
 
+
+
+
+
+
     /**
      * Handle Antom card payment authorization result
      * @param $order
@@ -102,34 +107,21 @@ class AmsPayRedirectResponseHandler implements HandlerInterface
      * @param $response
      * @return void
      */
-    private function handleCardPayment($order, $payment, $response)
+    private function handleCardPayment($order, InfoInterface $payment, $response)
     {
         $resultStatus = $response[AntomConstants::RESULT][AntomConstants::RESULT_STATUS];
-        $payment->setIsTransactionClosed(false);
-        $payment->setIsTransactionPending(true);
         if (strcmp($resultStatus, AntomConstants::S) == 0) {
             // When the payment is success, inactive quote and redirect to the success page
-            $paymentAction = [
-                AntomConstants::ACTION => AntomConstants::REDIRECT,
-                AntomConstants::NORMAL_URL => $this->urlBuilder->getUrl(self::SUCCESS_URL)
-            ];
-            $payment->setAdditionalInformation(AntomConstants::PAYMENT_ID, $response[AntomConstants::PAYMENT_ID]);
+            // no paymentId for SUCCESS status
             $payment->setAdditionalInformation(AntomConstants::PAYMENT_STATUS, AntomConstants::SUCCESS);
-            $payment->setTransactionId($response[AntomConstants::PAYMENT_ID]);
-        } else if (strcmp($resultStatus, AntomConstants::U) == 0) {
-            $paymentAction = [
-                AntomConstants::ACTION => AntomConstants::REDIRECT,
-                AntomConstants::NORMAL_URL => $response[AntomConstants::NORMAL_URL]
-            ];
-            $payment->setAdditionalInformation(AntomConstants::PAYMENT_ID, $response[AntomConstants::PAYMENT_ID]);
-            $payment->setAdditionalInformation(AntomConstants::PAYMENT_STATUS, AntomConstants::INITIATED);
-            $payment->setTransactionId($response[AntomConstants::PAYMENT_ID]);
+            if (!empty($response[AntomConstants::PAYMENT_ID])) {
+                $payment->setAdditionalInformation(AntomConstants::PAYMENT_ID, $response[AntomConstants::PAYMENT_ID]);
+                $payment->setTransactionId($response[AntomConstants::PAYMENT_ID]);
+            }
+            $payment->setIsTransactionClosed(false);
+            $payment->setIsTransactionPending(true);
         } else {
-            // F
-            $paymentAction = [
-                AntomConstants::ACTION => AntomConstants::REDIRECT,
-                AntomConstants::NORMAL_URL => $this->urlBuilder->getUrl(self::FAILURE_URL)
-            ];
+            // U or F
             $payment->setAdditionalInformation(AntomConstants::PAYMENT_STATUS, AntomConstants::FAIL);
             if (!empty($response[AntomConstants::PAYMENT_ID])) {
                 $payment->setTransactionId($response[AntomConstants::PAYMENT_ID]);
@@ -137,10 +129,10 @@ class AmsPayRedirectResponseHandler implements HandlerInterface
             $payment->setIsTransactionClosed(true);
             $payment->setIsTransactionPending(false);
         }
+        // This only expects for failed case
         $this->fillTransactionDetails($payment, $response);
         $payment->addTransaction(TransactionInterface::TYPE_AUTH, null, true);
         $payment->setAdditionalInformation(AntomConstants::PAYMENT_METHOD, AntomConstants::MAGENTO_ANTOM_CARD);
-        $payment->setAdditionalInformation(AntomConstants::PAYMENT_ACTION, json_encode($paymentAction));
     }
 
     /**

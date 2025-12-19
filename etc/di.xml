@@ -143,7 +143,7 @@
         <arguments>
             <argument name="requestBuilder" xsi:type="object">AntomAmsPayRequestBuilder</argument>
             <argument name="transferFactory" xsi:type="object">Antom\Core\Gateway\Http\TransferFactory</argument>
-            <argument name="client" xsi:type="object">Antom\Core\Gateway\Http\Client\AmsPayClient</argument>
+            <argument name="client" xsi:type="object">Antom\Core\Gateway\Http\Client\AmsPayLiveClient</argument>
             <argument name="handler" xsi:type="object">AmsPayRedirectResponseHandlerChain</argument>
             <argument name="validator" xsi:type="object">Antom\Core\Gateway\Validator\AmsPayRedirectResponseValidator
             </argument>
@@ -206,10 +206,26 @@
     <type name="Magento\Payment\Model\Method\Adapter">
         <plugin name="antom_card_is_active_plugin" type="Antom\Core\Plugin\PaymentMethodIsActivePlugin" sortOrder="10" />
     </type>
+
+    <!-- 拦截 ToOrderPayment 转换过程 -->
+    <type name="Magento\Quote\Model\Quote\Payment\ToOrderPayment">
+        <plugin name="antom_copy_payment_data"
+                type="Antom\Core\Plugin\ToOrderPaymentPlugin"
+                sortOrder="10"/>
+    </type>
+
     <preference for="Magento\Store\Model\StoreManagerInterface" type="Magento\Store\Model\StoreManager"/>
     <preference for="Antom\Core\Api\GuestAntomOrderPaymentStatusInterface"
                 type="Antom\Core\Model\Api\GuestAntomOrderPaymentStatus"/>
     <preference for="Antom\Core\Api\AntomOrderPaymentStatusInterface"
                 type="Antom\Core\Model\Api\AntomOrderPaymentStatus"/>
+    <preference for="Antom\Core\Api\AntomCreatePaymentSessionInterface"
+                type="Antom\Core\Model\Api\AntomCreatePaymentSession" />
+    <preference for="Antom\Core\Api\GuestAntomCreatePaymentSessionInterface"
+                type="Antom\Core\Model\Api\GuestAntomCreatePaymentSession" />
+    <preference for="Antom\Core\Api\GuestAntomRestoreQuoteInterface"
+                type="Antom\Core\Model\Api\GuestAntomRestoreQuote"/>
+    <preference for="Antom\Core\Api\AntomRestoreQuoteInterface"
+                type="Antom\Core\Model\Api\AntomRestoreQuote"/>
 </config>
 
