@@ -9,6 +9,8 @@ use Magento\Framework\App\Helper\AbstractHelper;
 use Magento\Framework\App\Helper\Context;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Payment\Gateway\Data\OrderAdapterInterface;
+use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\QuoteTest;
 use Magento\Store\Model\StoreManagerInterface;
 
 class RequestHelper extends AbstractHelper
@@ -153,6 +155,24 @@ class RequestHelper extends AbstractHelper
             AntomConstants::CURRENCY => $currencyCode,
             AntomConstants::VALUE => $amount
         ];
+    }
+
+
+    /**
+     * @param Quote $quote
+     * @return int
+     */
+    public function getQuoteAmount(Quote $quote)
+    {
+        $currencyCode = $quote->getCurrency()->getQuoteCurrencyCode();
+        $amount = $quote->getGrandTotal();
+        if (!array_key_exists($currencyCode, self::CURRENCY_MINOR_UNIT)) {
+            throw new InvalidArgumentException(__('Currency is not supported for this order.'));
+        }
+        $decimals = self::CURRENCY_MINOR_UNIT[$currencyCode] ?? 2;
+        $factor = pow(10, $decimals);
+        $amount = (int)round($amount * $factor);
+        return $amount;
     }
 
     /**

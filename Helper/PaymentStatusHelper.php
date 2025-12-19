@@ -22,16 +22,22 @@ class PaymentStatusHelper
 
     /**
      * Query payment status by calling inquiryPayment API
+     *
      * @param string $storeId
-     * @param string $paymentId
+     * @param string|null $paymentId
+     * @param string|null $paymentRequestId
      * @return string
      */
-    public function getPaymentStatus(string $storeId, string $paymentId): string
+    public function getPaymentStatus($storeId, $paymentId, $paymentRequestId): string
     {
         $client = $this->createAntomClient($storeId);
         $url = self::PAYMENT_INQUIRY_PATH;
         $paymentInquiryRequest = new PaymentInquiryRequest();
-        $paymentInquiryRequest->setPaymentId($paymentId);
+        if ($paymentId) {
+            $paymentInquiryRequest->setPaymentId($paymentId);
+        } else {
+            $paymentInquiryRequest->setPaymentRequestId($paymentRequestId);
+        }
         $paymentInquiryRequest->setPath($url);
         $response = null;
         try {

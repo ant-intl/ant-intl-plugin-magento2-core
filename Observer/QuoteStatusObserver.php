@@ -10,6 +10,12 @@ use Magento\Sales\Model\Order;
 
 class QuoteStatusObserver implements ObserverInterface
 {
+    /**
+     * Observer for QuoteStatus
+     *
+     * @param Observer $observer
+     * @return void
+     */
     public function execute(Observer $observer)
     {
         /** @var  Order $order */

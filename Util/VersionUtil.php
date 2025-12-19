@@ -53,7 +53,7 @@ class VersionUtil
     public function getPluginVersion(): string
     {
         // TODO: review this version for each release
-        return '1.0.0';
+        return '1.1.0';
     }
 
     /**

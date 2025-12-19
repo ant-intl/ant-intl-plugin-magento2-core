@@ -22,6 +22,18 @@ class AntomConfig
     const ANTOM_MIXED_CARD = ['antom_card_visa', 'antom_card_mastercard', 'antom_card_amex', 'antom_card_diner',
         'antom_card_discover', 'antom_card_unionpay', 'antom_card_jcb', 'antom_card_dinser'];
 
+    const AMS_CARD_MAP = [
+        'antom_card_visa' => 'VISA',
+        'antom_card_mastercard'  => 'MASTERCARD',
+        'antom_card_amex' => 'AMEX',
+        'antom_card_diner' => 'DINERS',
+        'antom_card_dinser' => 'DINERS',
+        'antom_card_discover' => 'DISCOVER',
+        'antom_card_unionpay' => 'CUP',
+        'antom_card_jcb' => 'JCB'
+    ];
+
+
     const ENV = 'environment';
     const DEBUG = 'debug';
 
@@ -143,6 +155,19 @@ class AntomConfig
     }
 
     /**
+     * Retrieve enabled cards from the admin configuration
+     *
+     * @param $storeId
+     * @return array
+     */
+    public function getAMSEnabledCards($storeId = null) {
+        $enabledCards = $this->getEnabledCards($storeId);
+        $mappedCards = array_filter(array_map(fn($card) => self::AMS_CARD_MAP[$card] ?? null, $enabledCards));
+        return $mappedCards;
+    }
+
+
+    /**
      * Retrieve config based on the storeId, if null, use the default scope
      *
      * @param string $field
@@ -156,7 +181,7 @@ class AntomConfig
         if ($storeId !== null && !is_int($storeId) && !is_string($storeId)) {
             throw new \InvalidArgumentException('Store ID must be int, string or null');
         }
-        
+
         $path = sprintf($pattern, $field);
 
         $scope = $storeId === null

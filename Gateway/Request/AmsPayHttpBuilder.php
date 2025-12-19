@@ -9,6 +9,10 @@ use Magento\Payment\Gateway\Request\BuilderInterface;
 
 class AmsPayHttpBuilder implements BuilderInterface
 {
+    private const PAYMENT_METHOD_URI_MAP = [
+        AntomConstants::MAGENTO_ALIPAY_CN => AntomConstants::AMS_PAY_URI,
+        AntomConstants::MAGENTO_ANTOM_CARD => AntomConstants::UPDATE_SESSION_URI
+    ];
     /**
      * Field config, used to read admin page configurations
      * @var AntomConfig
@@ -32,6 +36,9 @@ class AmsPayHttpBuilder implements BuilderInterface
     public function build(array $buildSubject)
     {
         $paymentDataObject = SubjectReader::readPayment($buildSubject);
+        $payment = $paymentDataObject->getPayment();
+        $paymentMethod = $payment->getMethod();
+
         $order = $paymentDataObject->getOrder();
         $storeId = $order->getStoreId();
         $antomGatewayUrl = $this->config->getAntomGatewayUrl($storeId);
@@ -43,9 +50,8 @@ class AmsPayHttpBuilder implements BuilderInterface
         ];
         return [
             AntomConstants::METHOD => AntomConstants::POST,
-            AntomConstants::URI => AntomConstants::AMS_PAY_URI,
+            AntomConstants::URI => self::PAYMENT_METHOD_URI_MAP[$paymentMethod],
             AntomConstants::CLIENT_CONFIG => $clientConfig
         ];
     }
-
 }

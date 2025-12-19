@@ -16,4 +16,35 @@
             <resource ref="anonymous"/>
         </resources>
     </route>
+
+    <route url="/V1/antom/orders/carts/createPaymentSession" method="POST">
+        <service class="Antom\Core\Api\AntomCreatePaymentSessionInterface" method="createPaymentSession"/>
+        <resources>
+            <resource ref="self"/>
+        </resources>
+    </route>
+
+
+    <route url="/V1/antom/orders/guest-carts/:cartId/createPaymentSession" method="POST">
+        <service class="Antom\Core\Api\GuestAntomCreatePaymentSessionInterface" method="createPaymentSession"/>
+        <resources>
+            <resource ref="anonymous"/>
+        </resources>
+    </route>
+
+
+    <route url="/V1/antom/quote/restore-by-order" method="POST">
+        <service class="Antom\Core\Api\AntomRestoreQuoteInterface" method="restoreQuoteByOrderId"/>
+        <resources>
+            <resource ref="self"/>
+        </resources>
+    </route>
+
+    <route url="/V1/antom/quote/:cartId/restore-by-order" method="POST">
+        <service class="Antom\Core\Api\GuestAntomRestoreQuoteInterface" method="restoreQuoteByOrderId"/>
+        <resources>
+            <resource ref="anonymous"/>
+        </resources>
+    </route>
+
 </routes>

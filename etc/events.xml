@@ -12,6 +12,6 @@
     </event>
 
     <event name="payment_method_assign_data_antom_card">
-        <observer name="custom_assign_data" instance="Antom\Core\Observer\AssignDataObserver" />
+        <observer name="custom_assign_data" instance="Antom\Core\Observer\PaymentAssignDataObserver" />
     </event>
 </config>

@@ -8,7 +8,7 @@
 
     "require": {
         "php": ">=7.4",
-        "antom/global-open-sdk-php": "~1.4.7",
+        "antom/global-open-sdk-php": "1.4.11",
         "magento/framework": ">=103.0.2",
         "magento/module-sales": ">=103.0.2",
         "magento/module-checkout": ">=100.4.2",

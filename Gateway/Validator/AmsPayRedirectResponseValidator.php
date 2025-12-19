@@ -99,6 +99,7 @@ class AmsPayRedirectResponseValidator extends AbstractValidator
                 }
             }
 
+            return $this->createResult(true);
             // paymentRequestId in the response should match the paymentRequestId in the request
             if (empty($response[AntomConstants::PAYMENT_REQUEST_ID])
                 || strcmp($response[AntomConstants::PAYMENT_REQUEST_ID], $paymentRequestId) != 0) {

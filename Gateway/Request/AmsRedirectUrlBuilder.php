@@ -3,14 +3,13 @@
 namespace Antom\Core\Gateway\Request;
 
 use Antom\Core\Gateway\AntomConstants;
+use Antom\Core\Gateway\AntomPathConstants;
 use Antom\Core\Helper\RequestHelper;
 use Magento\Payment\Gateway\Helper\SubjectReader;
 use Magento\Payment\Gateway\Request\BuilderInterface;
 
 class AmsRedirectUrlBuilder implements BuilderInterface
 {
-    private const PAYMENT_REDIRECT_PATH = '/antom/redirect';
-
     /**
      * @var RequestHelper
      */
@@ -40,13 +39,13 @@ class AmsRedirectUrlBuilder implements BuilderInterface
 
         switch ($order->getPayment()->getMethod()) {
             case AntomConstants::MAGENTO_ALIPAY_CN:
-                $paymentRedirectUrl = $domain . self::PAYMENT_REDIRECT_PATH . '?referenceOrderId=' . $orderId;
+                $paymentRedirectUrl = $domain . AntomPathConstants::PAYMENT_REDIRECT_PATH . '?referenceOrderId=' . $orderId;
                 break;
             case AntomConstants::MAGENTO_ANTOM_CARD:
                 $paymentRedirectUrl = 'https://checkout.antom.com/checkout-page/pages/close-event/index.html';
                 break;
             default:
-                $paymentRedirectUrl = $domain . self::PAYMENT_REDIRECT_PATH . '?referenceOrderId=' . $orderId;
+                $paymentRedirectUrl = $domain . AntomPathConstants::PAYMENT_REDIRECT_PATH . '?referenceOrderId=' . $orderId;
         }
 
         return [

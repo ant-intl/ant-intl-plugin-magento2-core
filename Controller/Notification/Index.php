@@ -18,6 +18,7 @@ use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\DB\TransactionFactory;
 use Magento\Quote\Model\QuoteRepository;
 use Magento\Sales\Api\Data\TransactionInterface;
+use Magento\Sales\Api\OrderPaymentRepositoryInterface;
 use Magento\Sales\Api\TransactionRepositoryInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\StatusResolver;
@@ -99,23 +100,26 @@ class Index implements HttpPostActionInterface, CsrfAwareActionInterface
 
     private $helper;
 
+    private $orderPaymentRepository;
+
     public function __construct(
-        RequestInterface               $request,
-        ResultFactory                  $resultFactory,
-        OrderFactory                   $orderFactory,
-        OrderRepository                $orderRepository,
-        StoreManagerInterface          $storeManager,
-        QuoteRepository                $quoteRepository,
-        StatusResolver                 $statusResolver,
-        SignatureTool                  $signatureTool,
-        TransactionFactory             $transactionFactory,
-        AntomConfig                    $antomConfig,
-        AntomLogger                    $antomLogger,
-        OrderMutex                     $orderMutex,
-        TransactionRepositoryInterface $transactionRepository,
-        SearchCriteriaBuilder          $searchCriteriaBuilder,
-        Builder                        $transactionBuilder,
-        RequestHelper                  $requestHelper
+        RequestInterface                $request,
+        ResultFactory                   $resultFactory,
+        OrderFactory                    $orderFactory,
+        OrderRepository                 $orderRepository,
+        StoreManagerInterface           $storeManager,
+        QuoteRepository                 $quoteRepository,
+        StatusResolver                  $statusResolver,
+        SignatureTool                   $signatureTool,
+        TransactionFactory              $transactionFactory,
+        AntomConfig                     $antomConfig,
+        AntomLogger                     $antomLogger,
+        OrderMutex                      $orderMutex,
+        TransactionRepositoryInterface  $transactionRepository,
+        SearchCriteriaBuilder           $searchCriteriaBuilder,
+        Builder                         $transactionBuilder,
+        RequestHelper                   $requestHelper,
+        OrderPaymentRepositoryInterface $orderPaymentRepository
     )
     {
         $this->request = $request;
@@ -134,6 +138,7 @@ class Index implements HttpPostActionInterface, CsrfAwareActionInterface
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->transactionBuilder = $transactionBuilder;
         $this->helper = $requestHelper;
+        $this->orderPaymentRepository = $orderPaymentRepository;
     }
 
     public function execute()
@@ -172,10 +177,18 @@ class Index implements HttpPostActionInterface, CsrfAwareActionInterface
         $bodyStr = $this->request->getContent();
         $body = json_decode($bodyStr, true);
         if ($body[AntomConstants::NOTIFY_TYPE] === AntomConstants::PAYMENT_RESULT) {
-            $order = $this->orderFactory->create()->loadByIncrementId($this->fetchOrderId());
+            if (strpos($body[AntomConstants::PAYMENT_REQUEST_ID], 'D') === 0) {
+                $order = $this->getOrderByPaymentRequestId($body[AntomConstants::PAYMENT_REQUEST_ID]);
+            } else {
+                $order = $this->orderFactory->create()->loadByIncrementId($this->fetchOrderId());
+            }
         } else {
-            $transaction = $this->fetchOrderPaymentTransaction($body);
-            $order = $this->orderRepository->get($transaction->getOrderId());
+            if (strpos($body[AntomConstants::CAPTURE_REQUEST_ID], 'D') === 0) {
+                $order = $this->getOrderByPaymentRequestId($body[AntomConstants::CAPTURE_REQUEST_ID]);
+            } else {
+                $transaction = $this->fetchOrderPaymentTransaction($body);
+                $order = $this->orderRepository->get($transaction->getOrderId());
+            }
         }
         // todo: add cron job when acquiring mutex fail
         $this->orderMutex->execute(
@@ -202,6 +215,7 @@ class Index implements HttpPostActionInterface, CsrfAwareActionInterface
                 $this->handleNotifySuccess($order, $body);
             } elseif (strcmp($body[AntomConstants::RESULT][AntomConstants::RESULT_STATUS], AntomConstants::F) === 0) {
                 // handle the case that the payment with Antom failed, do not inactivate the quote in this case.
+                // TODO: test this part
                 $this->handleNotifyClosed($order, $body);
             }
         }
@@ -223,6 +237,10 @@ class Index implements HttpPostActionInterface, CsrfAwareActionInterface
         // Card payment will have capture notify to update the transaction info
         if ($payment->getMethod() === AntomConstants::MAGENTO_ALIPAY_CN) {
             $this->insertCaptureTransaction($order, $body);
+        }
+
+        if ($payment->getMethod() === AntomConstants::MAGENTO_ANTOM_CARD) {
+            $this->insertPaymentTransaction($order, $body);
         }
     }
 
@@ -305,8 +323,44 @@ class Index implements HttpPostActionInterface, CsrfAwareActionInterface
             )
         );
         $captureTransaction = $payment->addTransaction(TransactionInterface::TYPE_CAPTURE);
-        $captureTransaction->setParentId($transaction->getId());
+        if ($transaction) {
+            $captureTransaction->setParentId($transaction->getId());
+        }
     }
+
+    private function insertPaymentTransaction(Order $order, array $body, string $status = 'success')
+    {
+        $payment = $order->getPayment();
+        $searchCriteria = $this->searchCriteriaBuilder
+            ->addFilter('txn_id', $body[AntomConstants::PAYMENT_ID])
+            ->create();
+        $transactions = $this->transactionRepository->getList($searchCriteria)->getItems();
+
+        if (!$transactions) {
+            $payment->setTransactionId($body[AntomConstants::PAYMENT_ID]);
+            // auth stage
+            $payment->setParentTransactionId(null);
+            $payment->setIsTransactionClosed(false);
+            $payment->setIsTransactionPending(true);
+            $payment->setShouldCloseParentTransaction(false);
+            if (isset($body[AntomConstants::PAYMENT_AMOUNT])) {
+                $amountArray = $body[AntomConstants::PAYMENT_AMOUNT];
+            }
+
+            $payment->setTransactionAdditionalInfo(
+                Transaction::RAW_DETAILS,
+                array_merge(
+                    $this->helper->amountConvert($amountArray),
+                    ['status' => $status]
+                )
+            );
+
+            $payment->addTransaction(TransactionInterface::TYPE_AUTH, null, true);
+        } else {
+            $this->antomLogger->error("Error with non-empty transactions: " . $transactions);
+        }
+    }
+
 
     /**
      * Check if the order state is invalid for payment success notify
@@ -470,11 +524,23 @@ class Index implements HttpPostActionInterface, CsrfAwareActionInterface
         if ($body[AntomConstants::NOTIFY_TYPE] === AntomConstants::CAPTURE_RESULT) {
             return;
         }
-        // check if the paymentId matches the one store in the table 'sales_order_payment'
-        $orderId = $this->fetchOrderId();
-        $order = $this->orderFactory->create()->loadByIncrementId($orderId);
+
+        if (strpos($body[AntomConstants::PAYMENT_REQUEST_ID], 'D') === 0) {
+            $order = $this->getOrderByPaymentRequestId($body[AntomConstants::PAYMENT_REQUEST_ID]);
+        } else {
+            // check if the paymentId matches the one store in the table 'sales_order_payment'
+            $orderId = $this->fetchOrderId();
+            $order = $this->orderFactory->create()->loadByIncrementId($orderId);
+        }
+
         $payment = $order->getPayment();
+        // we dont have paymentId for element card payment
+        if ($payment->getMethod() == AntomConstants::MAGENTO_ANTOM_CARD) {
+            return;
+        }
+
         $orderPaymentId = $payment->getAdditionalInformation(AntomConstants::PAYMENT_ID);
+
         if (strcmp($orderPaymentId, $body[AntomConstants::PAYMENT_ID]) != 0) {
             $this->antomLogger->error("Invalid paymentId, not matching the paymentId in the order");
             throw new InvalidArgumentException('Invalid paymentId, not matching the paymentId in the order');
@@ -503,11 +569,6 @@ class Index implements HttpPostActionInterface, CsrfAwareActionInterface
     private function verifySignature()
     {
         $signature = $this->request->getHeader(AntomConstants::SIGNATURE);
-        // use test_signature for local debug
-        // todo: remove before go public
-        if (strcmp($signature, 'test_signature') == 0) {
-            return;
-        }
         $signatureVal = $this->extractSignatureValue($signature);
         $clientId = $this->request->getHeader(AntomConstants::CLIENT_ID);
         $httpMethod = $this->request->getMethod();
@@ -596,5 +657,64 @@ class Index implements HttpPostActionInterface, CsrfAwareActionInterface
         ];
         $result->setData($data);
         return $result;
+    }
+
+
+    /**
+     * Get order with paymentRequestId
+     *
+     * @param string $antomPaymentRequestId
+     * @return \Magento\Sales\Api\Data\OrderInterface
+     */
+    public function getOrderByPaymentRequestId($antomPaymentRequestId)
+    {
+
+        try {
+            // Build search criteria
+            $searchCriteria = $this->searchCriteriaBuilder
+                ->addFilter(AntomConstants::ANTOM_PAYMENT_REQUEST_ID, $antomPaymentRequestId, 'eq')
+                ->create();
+
+            $paymentList = $this->orderPaymentRepository->getList($searchCriteria)->getItems();
+            $orderIdList = [];
+            foreach ($paymentList as $payment) {
+                $orderIdList[] = $payment->getParentId(); // 或者 getOrderId()
+            }
+            // 去重
+            $orderIdList = array_unique($orderIdList);
+            $validOrder = null;
+            foreach ($orderIdList as $orderId) {
+                try {
+                    $order = $this->orderRepository->get($orderId);
+                    // 判断订单状态是否已取消
+                    // Todo: check if processing is guranteed here, i.e. payment_result arrives before capture_result
+                    if ($order->getState() !== Order::STATE_CANCELED
+                    && ($order->getState() == Order::STATE_NEW || $order->getState() == Order::STATE_PROCESSING)) {
+                        // TODO: check if we can do this validation after reference order id is working
+                        // isset($body[\AntomConstants::REFERENCE_ORDER_ID]) &&
+                        //    $body[\AntomConstants::REFERENCE_ORDER_ID] == $order->getIncrementId()
+                        $validOrder = $order;
+                        break; // 找到第一个未取消的订单
+                    }
+                } catch (\Exception $e) {
+                    // 可以记录日志，但继续循环
+                    $this->antomLogger->error('Error finding order: ' . $e->getMessage());
+                    $this->antomLogger->error('Stack trace:', $e->getTrace());
+                    continue;
+                }
+            }
+            if ($validOrder) {
+                // 使用第一个未取消的订单
+                $orderId = $validOrder->getId();
+                $incrementId = $validOrder->getIncrementId();
+                return $validOrder;
+            }
+
+        } catch (\Exception $e) {
+            $this->logger->error('Error finding payment: ' . $e->getMessage());
+            throw new \RuntimeException('Error finding payment: ', 0, $e);
+        }
+        // throw exception
+        throw new \RuntimeException('No order found with antom_payment_request_id: ' . $antomPaymentRequestId);
     }
 }
