@@ -1,4 +1,5 @@
 {
+    "verison": "1.0.0",
     "name": "antom-magento/magento2-core",
     "description": "Antom core module for Magento 2",
     "type": "magento2-module",
