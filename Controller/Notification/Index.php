@@ -503,11 +503,6 @@ class Index implements HttpPostActionInterface, CsrfAwareActionInterface
     private function verifySignature()
     {
         $signature = $this->request->getHeader(AntomConstants::SIGNATURE);
-        // use test_signature for local debug
-        // todo: remove before go public
-        if (strcmp($signature, 'test_signature') == 0) {
-            return;
-        }
         $signatureVal = $this->extractSignatureValue($signature);
         $clientId = $this->request->getHeader(AntomConstants::CLIENT_ID);
         $httpMethod = $this->request->getMethod();
