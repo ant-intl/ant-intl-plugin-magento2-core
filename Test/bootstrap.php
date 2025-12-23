@@ -24,6 +24,45 @@ if (!$autoloaderFound) {
     throw new RuntimeException('Composer autoloader not found. Run "composer install" first.');
 }
 
+// 定义测试常量
+if (!defined('BP')) {
+    define('BP', __DIR__ . '/..');
+}
+if (!defined('TESTS_TEMP_DIR')) {
+    define('TESTS_TEMP_DIR', __DIR__ . '/../build/tmp');
+}
+
+// 创建必要的临时目录
+$mockDir = TESTS_TEMP_DIR . '/generated_mocks';
+if (!is_dir($mockDir)) {
+    // 使用 @ 抑制在并发环境中可能出现的目录已存在警告
+    @mkdir($mockDir, 0777, true);
+}
+
+/**
+ * 将类/接口代码写入临时文件并加载，作为 eval() 的安全替代方案。
+ *
+ * @param string $classCode The PHP code to generate the class/interface.
+ * @throws RuntimeException If a temporary file cannot be created.
+ */
+function generateAndLoadClassSafe(string $classCode): void
+{
+    global $mockDir; // 使用全局定义的 mock 目录
+
+    // 使用 tempnam 创建一个唯一的文件名以避免冲突
+    $filePath = tempnam($mockDir, 'mock_class_');
+    if ($filePath === false) {
+        throw new RuntimeException("Could not create temporary file in {$mockDir}");
+    }
+
+    // 将 <?php 标记和类代码写入文件
+    file_put_contents($filePath, "<?php\n\n" . $classCode);
+
+    // 加载文件
+    require_once $filePath;
+}
+
+
 // 2. 设置 Magento generated 目录
 $generatedPaths = [
     __DIR__ . '/../generated/code',
@@ -40,7 +79,7 @@ foreach ($generatedPaths as $generatedPath) {
 // 3. 定义 Mock 类和接口创建函数
 function createMockClass(string $fullClassName, array $methods = [], bool $isInterface = false): void
 {
-    if (class_exists($fullClassName) || interface_exists($fullClassName)) {
+    if (class_exists($fullClassName, false) || interface_exists($fullClassName, false)) {
         return;
     }
 
@@ -50,13 +89,8 @@ function createMockClass(string $fullClassName, array $methods = [], bool $isInt
 
     $methodsCode = '';
     foreach ($methods as $method => $returnValue) {
-        if (is_string($returnValue)) {
-            $returnCode = "'$returnValue'";
-        } elseif (is_null($returnValue)) {
-            $returnCode = 'null';
-        } else {
-            $returnCode = var_export($returnValue, true);
-        }
+        // var_export 可以正确处理所有类型，包括字符串、null和布尔值
+        $returnCode = var_export($returnValue, true);
 
         if ($isInterface) {
             $methodsCode .= "    public function $method();\n";
@@ -84,13 +118,7 @@ $type $className {
 $methodsCode$extraMethods
 }";
 
-    try {
-        eval($classCode);
-    } catch (ParseError $e) {
-        // 忽略解析错误，可能类已经存在
-    } catch (Error $e) {
-        // 忽略其他错误，如重复声明
-    }
+    generateAndLoadClassSafe($classCode);
 }
 
 // 4. 创建必要的接口（简化版本，避免参数冲突）
@@ -111,58 +139,25 @@ foreach ($mockInterfaces as $interfaceName => $methods) {
 // 5. 创建必要的 Mock 类
 $mockClasses = [
     'Magento\Sales\Model\Order' => [
-        'loadByIncrementId' => null,
-        'getId' => null,
-        'getPayment' => null,
-        'setId' => null,
-        'setPayment' => null,
-        'getIncrementId' => null,
-        'getState' => null,
-        'setState' => null,
-        'getStatus' => null,
-        'setStatus' => null,
-        'save' => null
+        'loadByIncrementId' => null, 'getId' => null, 'getPayment' => null, 'setId' => null,
+        'setPayment' => null, 'getIncrementId' => null, 'getState' => null, 'setState' => null,
+        'getStatus' => null, 'setStatus' => null, 'save' => null
     ],
-    'Magento\Sales\Model\OrderFactory' => [
-        'create' => null
-    ],
+    'Magento\Sales\Model\OrderFactory' => ['create' => null],
     'Magento\Sales\Model\Order\Payment' => [
-        'getAdditionalInformation' => null,
-        'setAdditionalInformation' => null,
-        'getMethod' => 'mock_method',
-        'getMethodInstance' => null,
-        'setMethod' => null,
-        'getOrder' => null,
-        'setOrder' => null
+        'getAdditionalInformation' => null, 'setAdditionalInformation' => null, 'getMethod' => 'mock_method',
+        'getMethodInstance' => null, 'setMethod' => null, 'getOrder' => null, 'setOrder' => null
     ],
-    'Magento\Quote\Model\QuoteFactory' => [
-        'create' => null
-    ],
+    'Magento\Quote\Model\QuoteFactory' => ['create' => null],
     'Magento\Quote\Model\Quote' => [
-        'getId' => null,
-        'getReservedOrderId' => null,
-        'setReservedOrderId' => null,
-        'collectTotals' => null,
-        'save' => null
+        'getId' => null, 'getReservedOrderId' => null, 'setReservedOrderId' => null,
+        'collectTotals' => null, 'save' => null
     ],
-    'Magento\Framework\DB\TransactionFactory' => [
-        'create' => null
-    ],
-    'Magento\Framework\DB\Transaction' => [
-        'addObject' => null,
-        'save' => null
-    ],
-    'Magento\Framework\Controller\ResultFactory' => [
-        'create' => null
-    ],
-    'Magento\Framework\Controller\Result\Json' => [
-        'setData' => null,
-        'setHttpResponseCode' => null
-    ],
-    'Magento\Framework\Controller\Result\Redirect' => [
-        'setUrl' => null,
-        'setPath' => null
-    ]
+    'Magento\Framework\DB\TransactionFactory' => ['create' => null],
+    'Magento\Framework\DB\Transaction' => ['addObject' => null, 'save' => null],
+    'Magento\Framework\Controller\ResultFactory' => ['create' => null],
+    'Magento\Framework\Controller\Result\Json' => ['setData' => null, 'setHttpResponseCode' => null],
+    'Magento\Framework\Controller\Result\Redirect' => ['setUrl' => null, 'setPath' => null]
 ];
 
 foreach ($mockClasses as $className => $methods) {
@@ -172,7 +167,7 @@ foreach ($mockClasses as $className => $methods) {
 // 6. 手动创建具体的实现类（用正确的方法签名）
 if (interface_exists('Magento\Framework\App\Config\ScopeConfigInterface')) {
     if (!class_exists('MockScopeConfig')) {
-        eval('
+        generateAndLoadClassSafe('
         class MockScopeConfig implements Magento\Framework\App\Config\ScopeConfigInterface {
             public function getValue($path, $scopeType = null, $scopeCode = null) { return null; }
             public function isSetFlag($path, $scopeType = null, $scopeCode = null) { return false; }
@@ -183,7 +178,7 @@ if (interface_exists('Magento\Framework\App\Config\ScopeConfigInterface')) {
 
 // 7. 为 StoreManagerInterface 创建正确的 Mock 实现
 if (!interface_exists('Magento\Store\Model\StoreManagerInterface') && !class_exists('Magento\Store\Model\StoreManagerInterface')) {
-    eval('
+    generateAndLoadClassSafe('
     namespace Magento\Store\Model;
     interface StoreManagerInterface {
         public function getStore($storeId = null);
@@ -203,7 +198,7 @@ if (!interface_exists('Magento\Store\Model\StoreManagerInterface') && !class_exi
 }
 
 if (!class_exists('MockStoreManager')) {
-    eval('
+    generateAndLoadClassSafe('
     class MockStoreManager implements Magento\Store\Model\StoreManagerInterface {
         public function getStore($storeId = null) { return null; }
         public function getStores($withDefault = false, $codeKey = false) { return []; }
@@ -234,12 +229,12 @@ $additionalMockClasses = [
 ];
 
 foreach ($additionalMockClasses as $className) {
-    if (!class_exists($className)) {
+    if (!class_exists($className, false)) {
         $lastSlash = strrpos($className, '\\');
         $namespace = substr($className, 0, $lastSlash);
         $classname = substr($className, $lastSlash + 1);
 
-        eval("
+        generateAndLoadClassSafe("
         namespace $namespace;
         class $classname {
             public function __call(\$name, \$arguments) { return \$this; }
@@ -251,21 +246,6 @@ foreach ($additionalMockClasses as $className) {
 
 // 9. 设置全局配置
 date_default_timezone_set('UTC');
-
-// 10. 定义测试常量
-if (!defined('BP')) {
-    define('BP', __DIR__ . '/..');
-}
-
-if (!defined('TESTS_TEMP_DIR')) {
-    define('TESTS_TEMP_DIR', __DIR__ . '/../build/tmp');
-}
-
-// 11. 创建必要的目录
-$tempDir = TESTS_TEMP_DIR;
-if (!is_dir($tempDir)) {
-    @mkdir($tempDir, 0755, true);
-}
 
 // 恢复正常的错误报告
 error_reporting(E_ALL & ~E_DEPRECATED & ~E_USER_DEPRECATED);
