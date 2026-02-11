@@ -3,14 +3,12 @@
 namespace Antom\Core\Test\Unit\Gateway\Request;
 
 use Antom\Core\Gateway\Request\AmsPayOrderBuilder;
-use Antom\Core\Gateway\AntomConstants;
 use Antom\Core\Helper\RequestHelper;
-use Magento\Customer\Model\Session as CustomerSession;
+use Magento\Authorization\Model\UserContextInterface;
 use Magento\Checkout\Model\Session as CheckoutSession;
-use Magento\Store\Model\StoreManagerInterface;
-use Magento\Payment\Gateway\Data\OrderAdapterInterface;
-use Magento\Payment\Gateway\Data\PaymentDataObjectInterface;
+use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Payment\Gateway\Data\OrderItemInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -49,6 +47,11 @@ class AmsPayOrderBuilderTest extends TestCase
      */
     private $storeMock;
 
+    /**
+     * @var UserContextInterface|MockObject
+     */
+    private $userContextMock;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -58,12 +61,14 @@ class AmsPayOrderBuilderTest extends TestCase
         $this->checkoutSessionMock = $this->createMock(CheckoutSession::class);
         $this->storeManagerMock = $this->createMock(StoreManagerInterface::class);
         $this->storeMock = $this->createMock(\Magento\Store\Model\Store::class);
+        $this->userContextMock = $this->createMock(UserContextInterface::class);
         
         $this->builder = new AmsPayOrderBuilder(
             $this->requestHelperMock,
             $this->storeManagerMock,
             $this->customerSessionMock,
-            $this->checkoutSessionMock
+            $this->checkoutSessionMock,
+            $this->userContextMock
         );
     }
 

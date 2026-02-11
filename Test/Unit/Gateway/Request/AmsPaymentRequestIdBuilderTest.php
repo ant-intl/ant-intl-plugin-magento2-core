@@ -50,7 +50,9 @@ class AmsPaymentRequestIdBuilderTest extends TestCase
         
         $this->paymentDataObjectMock = $this->createMock(PaymentDataObjectInterface::class);
         $this->orderMock = $this->createMock(OrderAdapterInterface::class);
-        $this->paymentMock = $this->createMock(\Magento\Sales\Api\Data\OrderPaymentInterface::class);
+        $this->paymentMock = $this->getMockBuilder(\Magento\Sales\Api\Data\OrderPaymentInterface::class)
+            ->addMethods(['getData'])
+            ->getMockForAbstractClass();
     }
 
     public function testBuildPaymentRequestId(): void

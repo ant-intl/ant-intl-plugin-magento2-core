@@ -2,13 +2,14 @@
 
 namespace Antom\Core\Test\Unit\Observer;
 
-use Antom\Core\Observer\SetOrderStateAfterPaymentObserver;
 use Antom\Core\Gateway\AntomConstants;
-use Magento\Framework\Event\Observer;
+use Antom\Core\Observer\SetOrderStateAfterPaymentObserver;
 use Magento\Framework\Event;
+use Magento\Framework\Event\Observer;
+use Magento\Sales\Api\Data\OrderInterface;
+use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Payment;
-use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order\StatusResolver;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -46,7 +47,7 @@ class SetOrderStateAfterPaymentObserverTest extends TestCase
     private $paymentMock;
 
     /**
-     * @var Order|MockObject
+     * @var OrderInterface|MockObject
      */
     private $orderMock;
 
@@ -57,7 +58,9 @@ class SetOrderStateAfterPaymentObserverTest extends TestCase
         $this->observerMock = $this->createMock(Observer::class);
         $this->eventMock = $this->createMock(Event::class);
         $this->paymentMock = $this->createMock(Payment::class);
-        $this->orderMock = $this->createMock(Order::class);
+        $this->orderMock = $this->getMockBuilder(OrderInterface::class)
+            ->addMethods(['addCommentToStatusHistory'])
+            ->getMockForAbstractClass();
 
         $this->observer = new SetOrderStateAfterPaymentObserver(
             $this->statusResolverMock,

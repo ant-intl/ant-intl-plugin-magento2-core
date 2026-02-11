@@ -93,16 +93,17 @@ class AbstractPaymentSessionTest extends TestCase
         $this->requestHelperMock = $this->createMock(RequestHelper::class);
         $this->antomConfigMock = $this->createMock(AntomConfig::class);
         $this->antomLoggerMock = $this->createMock(AntomLogger::class);
-        $this->quoteMock = $this->createMock(Quote::class);
+        $this->quoteMock = $this->getMockBuilder(Quote::class)
+            ->addMethods(['getItemsCount', 'getCurrency', 'getStoreId', 'getCustomerId'])
+            ->getMock();
         $this->storeManagerMock = $this->createMock(StoreManagerInterface::class);
         $this->userContextMock = $this->createMock(UserContextInterface::class);
         $this->maskedQuoteIdToQuoteIdMock = $this->createMock(MaskedQuoteIdToQuoteIdInterface::class);
 
         $this->currencyMock = $this->createMock(CurrencyInterface::class);
-        $this->storeMock = $this->createMock(Store::class);
-
-        $this->storeMock->method('getBaseUrl')
-            ->willReturn('https://example.com/');
+        $this->storeMock = $this->getMockBuilder(Store::class)
+            ->addMethods(['getBaseUrl'])
+            ->getMock();
 
         $this->model = new GuestAntomCreatePaymentSession(
             $this->cartRepositoryMock,
@@ -156,6 +157,9 @@ class AbstractPaymentSessionTest extends TestCase
 
         $this->quoteMock->method('getStoreId')
             ->willReturn($storeId);
+
+        $this->quoteMock->method('getCustomerId')
+            ->willReturn(null);
 
         $this->storeManagerMock->method('getStore')
             ->with($storeId)
@@ -288,7 +292,7 @@ class AbstractPaymentSessionTest extends TestCase
     {
         $cartId = '123';
         $customerId = 456;
-        $quoteId = 123;
+
         $this->userContextMock
             ->expects($this->once())
             ->method('getUserType')
@@ -297,21 +301,35 @@ class AbstractPaymentSessionTest extends TestCase
             ->expects($this->once())
             ->method('getUserId')
             ->willReturn($customerId);
+
+        // Create a new quote mock for customer user type test with getId method
+        $customerQuoteMock = $this->createMock(Quote::class);
+        $customerQuoteMock->method('getId')
+            ->willReturn((int)$cartId);
+
         $this->cartRepositoryMock
             ->expects($this->once())
             ->method('getActiveForCustomer')
             ->with($customerId)
-            ->willReturn($this->quoteMock);
-        $this->quoteMock
-            ->expects($this->once())
-            ->method('getId')
-            ->willReturn($quoteId);
+            ->willReturn($customerQuoteMock);
+
+        // Create a new model instance with updated mock
+        $this->model = new GuestAntomCreatePaymentSession(
+            $this->cartRepositoryMock,
+            $this->requestHelperMock,
+            $this->storeManagerMock,
+            $this->maskedQuoteIdToQuoteIdMock,
+            $this->antomConfigMock,
+            $this->userContextMock,
+            $this->antomLoggerMock
+        );
+
         $reflection = new \ReflectionClass($this->model);
         $method = $reflection->getMethod('getQuoteByCartId');
 
         $method->setAccessible(true);
 
         $result = $method->invoke($this->model, $cartId, true);
-        $this->assertSame($this->quoteMock, $result);
+        $this->assertSame($customerQuoteMock, $result);
     }
 }

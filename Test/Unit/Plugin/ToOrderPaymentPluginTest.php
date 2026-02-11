@@ -41,7 +41,11 @@ class ToOrderPaymentPluginTest extends TestCase
     {
         $this->loggerMock = $this->createMock(AntomLogger::class);
         $this->subjectMock = $this->createMock(ToOrderPayment::class);
-        $this->orderPaymentMock = $this->createMock(OrderPayment::class);
+        $this->orderPaymentMock = $this->getMockBuilder(OrderPayment::class)
+            ->disableOriginalConstructor()
+            ->addMethods(['setData', 'getData'])
+            ->onlyMethods(['setAdditionalInformation'])
+            ->getMock();
         $this->quotePaymentMock = $this->createMock(Payment::class);
 
         $this->plugin = new ToOrderPaymentPlugin($this->loggerMock);

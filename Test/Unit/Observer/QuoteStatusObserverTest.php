@@ -32,7 +32,9 @@ class QuoteStatusObserverTest extends TestCase
         
         $order = $this->createMock(Order::class);
         $payment = $this->createMock(Payment::class);
-        $quote = $this->createMock(Quote::class);
+        $quote = $this->getMockBuilder(Quote::class)
+            ->addMethods(['setIsActive'])
+            ->getMock();
         $event = $this->getMockBuilder(Event::class)
             ->addMethods(['getOrder', 'getQuote'])
             ->getMock();
@@ -64,7 +66,9 @@ class QuoteStatusObserverTest extends TestCase
     {
         $order = $this->createMock(Order::class);
         $payment = $this->createMock(Payment::class);
-        $quote = $this->createMock(Quote::class);
+        $quote = $this->getMockBuilder(Quote::class)
+            ->addMethods(['setIsActive'])
+            ->getMock();
         $event = $this->getMockBuilder(Event::class)
             ->addMethods(['getOrder', 'getQuote'])
             ->getMock();
@@ -96,7 +100,9 @@ class QuoteStatusObserverTest extends TestCase
     {
         $order = $this->createMock(Order::class);
         $payment = $this->createMock(Payment::class);
-        $quote = $this->createMock(Quote::class);
+        $quote = $this->getMockBuilder(Quote::class)
+            ->addMethods(['setIsActive'])
+            ->getMock();
         $event = $this->getMockBuilder(Event::class)
             ->addMethods(['getOrder', 'getQuote'])
             ->getMock();
@@ -128,7 +134,9 @@ class QuoteStatusObserverTest extends TestCase
         $paymentAction = json_encode([AntomConstants::ACTION => 'OTHER_ACTION']);
         $order = $this->createMock(Order::class);
         $payment = $this->createMock(Payment::class);
-        $quote = $this->createMock(Quote::class);
+        $quote = $this->getMockBuilder(Quote::class)
+            ->addMethods(['setIsActive'])
+            ->getMock();
         $event = $this->getMockBuilder(Event::class)
             ->addMethods(['getOrder', 'getQuote'])
             ->getMock();
@@ -159,7 +167,9 @@ class QuoteStatusObserverTest extends TestCase
     {
         $order = $this->createMock(Order::class);
         $payment = $this->createMock(Payment::class);
-        $quote = $this->createMock(Quote::class);
+        $quote = $this->getMockBuilder(Quote::class)
+            ->addMethods(['setIsActive'])
+            ->getMock();
         $event = $this->getMockBuilder(Event::class)
             ->addMethods(['getOrder', 'getQuote'])
             ->getMock();
@@ -190,7 +200,9 @@ class QuoteStatusObserverTest extends TestCase
     {
         $order = $this->createMock(Order::class);
         $payment = $this->createMock(Payment::class);
-        $quote = $this->createMock(Quote::class);
+        $quote = $this->getMockBuilder(Quote::class)
+            ->addMethods(['setIsActive'])
+            ->getMock();
         $event = $this->getMockBuilder(Event::class)
             ->addMethods(['getOrder', 'getQuote'])
             ->getMock();
@@ -221,7 +233,9 @@ class QuoteStatusObserverTest extends TestCase
     {
         $order = $this->createMock(Order::class);
         $payment = $this->createMock(Payment::class);
-        $quote = $this->createMock(Quote::class);
+        $quote = $this->getMockBuilder(Quote::class)
+            ->addMethods(['setIsActive'])
+            ->getMock();
         $event = $this->getMockBuilder(Event::class)
             ->addMethods(['getOrder', 'getQuote'])
             ->getMock();
