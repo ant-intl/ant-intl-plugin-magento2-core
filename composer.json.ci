@@ -1,5 +1,5 @@
 {
-    "name": "antom-magento/magento2-core",
+    "name": "antom/magento2-core",
     "description": "Antom core module for Magento 2 - CI Environment",
     "type": "magento2-module",
     "license": ["MIT"],

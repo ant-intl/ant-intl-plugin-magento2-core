@@ -25,6 +25,8 @@ class AntomConstants
     public const ENV = 'env';
     public const ORDER = 'order';
     public const PAYMENT_REQUEST_ID = 'paymentRequestId';
+    // db column
+    public const ANTOM_PAYMENT_REQUEST_ID = 'antom_payment_request_id';
     public const PAYMENT_AMOUNT = 'paymentAmount';
     public const CAPTURE_AMOUNT = 'captureAmount';
     public const SETTLEMENT_STRATEGY = 'settlementStrategy';
@@ -93,6 +95,7 @@ class AntomConstants
     public const CAPTURE_MODE = 'captureMode';
 
     public const AMS_PAY_URI = '/ams/api/v1/payments/pay';
+    public const UPDATE_SESSION_URI = '/ams/api/v1/payments/updatePaymentSession';
     public const MAGENTO_ALIPAY_CN = 'antom_alipay_cn';
     public const MAGENTO_ANTOM_CARD = 'antom_card';
     public const ALIPAY_CN = 'ALIPAY_CN';
@@ -135,4 +138,5 @@ class AntomConstants
     public const STATUS = 'status';
     public const CAPTURE_REQUEST_ID = 'captureRequestId';
 
+    public const ANTOM_ELEMENT_CARD_FAILED = 'antom_element_card_failed';
 }

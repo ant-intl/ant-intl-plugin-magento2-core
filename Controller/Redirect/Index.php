@@ -93,6 +93,7 @@ class Index implements HttpGetActionInterface
 
     public function execute()
     {
+        // TODO: make sure card payment not being redirected
         $redirectParam = $this->request->getParams();
         // check the required parameter in the redirect request
         if (empty($redirectParam) || empty($redirectParam[AntomConstants::REFERENCE_ORDER_ID])) {
@@ -112,11 +113,14 @@ class Index implements HttpGetActionInterface
         }
         $storeId = $this->storeManager->getStore()->getId();
         $paymentStatus = $payment->getAdditionalInformation(AntomConstants::PAYMENT_STATUS);
-        if (strcmp($paymentStatus, AntomConstants::INITIATED) == 0) {
+        if (strcmp($paymentStatus, AntomConstants::INITIATED) == 0
+            || ($payment->getMethod()==AntomConstants::MAGENTO_ANTOM_CARD
+                && strcmp($paymentStatus, AntomConstants::SUCCESS) == 0)) {
             // payment has been initiated, but the payment notification has not received yet
             // query Antom for the final payment status
             $paymentId = $payment->getAdditionalInformation(AntomConstants::PAYMENT_ID);
-            $inquiryResult = $this->inquiryPaymentStatus($storeId, $paymentId);
+            $paymentRequestId = $payment->getAdditionalInformation(AntomConstants::ANTOM_PAYMENT_REQUEST_ID);
+            $inquiryResult = $this->inquiryPaymentStatus($storeId, $paymentId, $paymentRequestId);
             if ($inquiryResult === AntomConstants::UNKNOWN) {
                 //todo: 查不到状态如何跳转
                 switch ($payment->getMethod()) {
@@ -182,16 +186,18 @@ class Index implements HttpGetActionInterface
 
     /**
      * Polling payment status
+     *
      * @param $storeId
      * @param $paymentId
+     * @param $paymentRequestId
      * @return string
      */
-    private function inquiryPaymentStatus($storeId, $paymentId)
+    private function inquiryPaymentStatus($storeId, $paymentId, $paymentRequestId)
     {
         $times = 3;
         $cnt = 0;
         while ($cnt < $times) {
-            $paymentStatus = $this->paymentStatusHelper->getPaymentStatus($storeId, $paymentId);
+            $paymentStatus = $this->paymentStatusHelper->getPaymentStatus($storeId, $paymentId, $paymentRequestId);
             if ($paymentStatus == AntomConstants::UNKNOWN) {
                 sleep(1 << $cnt);
                 $cnt++;

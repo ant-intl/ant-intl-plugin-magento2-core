@@ -126,10 +126,9 @@ class GuestAntomOrderPaymentStatus implements GuestAntomOrderPaymentStatusInterf
                     "message" => $warningMessage
                 ]);
             }
-            $paymentAction = $additionalInformation[AntomConstants::PAYMENT_ACTION];
             $result = [
+                AntomConstants::PAYMENT_METHOD => $paymentMethod,
                 AntomConstants::PAYMENT_STATUS => $additionalInformation[AntomConstants::PAYMENT_STATUS],
-                AntomConstants::PAYMENT_ACTION => json_decode($paymentAction, true),
                 "message" => AntomConstants::SUCCESS,
                 AntomConstants::REFERENCE_ORDER_ID => $referenceOrderId,
                 AntomConstants::IS_3DS => $is3ds

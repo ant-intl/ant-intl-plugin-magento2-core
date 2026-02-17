@@ -30,15 +30,27 @@ class AmsPaymentRequestIdBuilder implements BuilderInterface
      */
     public function build(array $buildSubject): array
     {
+        // 1. Read the payment data object from the build subject
+        $paymentDataObject = SubjectReader::readPayment($buildSubject);
+        // 2. Get the payment instance
+        $payment = $paymentDataObject->getPayment();
+        if ($payment->getData(AntomConstants::ANTOM_PAYMENT_REQUEST_ID)) {
+            // Value exists and is not empty (not null, false, 0, '', etc.)
+            // for card element sdk, we have the payment_request_id passing from UI to updatePaymentSession
+            return [
+                AntomConstants::PAYMENT_REQUEST_ID => $payment->getData(AntomConstants::ANTOM_PAYMENT_REQUEST_ID)
+            ];
+        }
+
         $microtime = microtime(true);
         $milliseconds = (int)(($microtime - floor($microtime)) * 1000);
         $datetime = date('YmdHis');
         $datetimeWithMs = $datetime . sprintf('%03d', $milliseconds);
-        $paymentDataObject = SubjectReader::readPayment($buildSubject);
+
         $order = $paymentDataObject->getOrder();
         $orderId = $order->getOrderIncrementId();
         $storeId = $order->getStoreId();
-        $payment = $paymentDataObject->getPayment();
+
         $randomNumber = 'RN';
         try {
             $randomNumber = random_int(10, 99);

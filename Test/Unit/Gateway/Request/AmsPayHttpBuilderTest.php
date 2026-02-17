@@ -7,6 +7,7 @@ use Antom\Core\Gateway\Request\AmsPayHttpBuilder;
 use Antom\Core\Gateway\AntomConstants;
 use Magento\Payment\Gateway\Data\OrderAdapterInterface;
 use Magento\Payment\Gateway\Data\PaymentDataObjectInterface;
+use Magento\Sales\Api\Data\OrderPaymentInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -35,6 +36,11 @@ class AmsPayHttpBuilderTest extends TestCase
      */
     private $orderMock;
 
+    /**
+     * @var OrderPaymentInterface|MockObject
+     */
+    private $paymentMock;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -44,6 +50,7 @@ class AmsPayHttpBuilderTest extends TestCase
         
         $this->paymentDataObjectMock = $this->createMock(PaymentDataObjectInterface::class);
         $this->orderMock = $this->createMock(OrderAdapterInterface::class);
+        $this->paymentMock = $this->createMock(OrderPaymentInterface::class);
     }
 
     public function testBuildHttpConfigForStore(): void
@@ -54,7 +61,9 @@ class AmsPayHttpBuilderTest extends TestCase
         $expectedPrivateKey = 'test_private_key';
         $expectedPublicKey = 'test_public_key';
 
+        $this->paymentDataObjectMock->method('getPayment')->willReturn($this->paymentMock);
         $this->paymentDataObjectMock->method('getOrder')->willReturn($this->orderMock);
+        $this->paymentMock->method('getMethod')->willReturn(AntomConstants::MAGENTO_ALIPAY_CN);
         $this->orderMock->method('getStoreId')->willReturn($storeId);
 
         $this->configMock->expects($this->once())
@@ -104,7 +113,9 @@ class AmsPayHttpBuilderTest extends TestCase
         $expectedPrivateKey = 'prod_private_key';
         $expectedPublicKey = 'prod_public_key';
 
+        $this->paymentDataObjectMock->method('getPayment')->willReturn($this->paymentMock);
         $this->paymentDataObjectMock->method('getOrder')->willReturn($this->orderMock);
+        $this->paymentMock->method('getMethod')->willReturn(AntomConstants::MAGENTO_ALIPAY_CN);
         $this->orderMock->method('getStoreId')->willReturn($storeId);
 
         $this->configMock->method('getAntomGatewayUrl')->with($storeId)->willReturn($expectedGatewayUrl);
@@ -123,7 +134,9 @@ class AmsPayHttpBuilderTest extends TestCase
     {
         $storeId = 1;
 
+        $this->paymentDataObjectMock->method('getPayment')->willReturn($this->paymentMock);
         $this->paymentDataObjectMock->method('getOrder')->willReturn($this->orderMock);
+        $this->paymentMock->method('getMethod')->willReturn(AntomConstants::MAGENTO_ALIPAY_CN);
         $this->orderMock->method('getStoreId')->willReturn($storeId);
 
         $this->configMock->method('getAntomGatewayUrl')->with($storeId)->willReturn('');

@@ -10,6 +10,7 @@ use Magento\Framework\UrlInterface;
 use Magento\Payment\Gateway\Helper\SubjectReader;
 use Magento\Payment\Gateway\Request\BuilderInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\Authorization\Model\UserContextInterface;
 
 class AmsPayOrderBuilder implements BuilderInterface
 {
@@ -34,6 +35,11 @@ class AmsPayOrderBuilder implements BuilderInterface
     private $checkoutSession;
 
     /**
+     * @var Context WebApiContext
+     */
+    private $userContext;
+
+    /**
      * AmsPayOrderBuilder constructor
      * @param RequestHelper $requestHelper
      * @param StoreManagerInterface $storeManager
@@ -42,12 +48,14 @@ class AmsPayOrderBuilder implements BuilderInterface
         RequestHelper         $requestHelper,
         StoreManagerInterface $storeManager,
         CustomerSession       $customerSession,
-        CheckoutSession       $checkoutSession)
+        CheckoutSession       $checkoutSession,
+        UserContextInterface  $userContext)
     {
         $this->requestHelper = $requestHelper;
         $this->storeManager = $storeManager;
         $this->customerSession = $customerSession;
         $this->checkoutSession = $checkoutSession;
+        $this->userContext = $userContext;
     }
 
     /**
@@ -97,6 +105,13 @@ class AmsPayOrderBuilder implements BuilderInterface
         if ($this->customerSession->isLoggedIn()) {
             return (string)$this->customerSession->getCustomerId();
         }
+
+        if ($this->userContext->getUserType() === \Magento\Authorization\Model\UserContextInterface::USER_TYPE_CUSTOMER) {
+            $customerId = $this->userContext->getUserId();
+            // 这是通过 token 获取到的已登录客户ID
+            return $customerId;
+        }
+
         $quote = $this->checkoutSession->getQuote();
         return $quote->getCustomerEmail();
     }

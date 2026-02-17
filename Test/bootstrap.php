@@ -49,7 +49,11 @@ function generateAndLoadClassSafe(string $classCode): void
 {
     global $mockDir; // 使用全局定义的 mock 目录
 
-    // 使用 tempnam 创建一个唯一的文件名以避免冲突
+    // 如果 $mockDir 不是字符串或目录无法使用，则退回系统临时目录
+    if (empty($mockDir) || !is_dir($mockDir)) {
+        $mockDir = sys_get_temp_dir();
+    }
+
     $filePath = tempnam($mockDir, 'mock_class_');
     if ($filePath === false) {
         throw new RuntimeException("Could not create temporary file in {$mockDir}");
@@ -123,10 +127,10 @@ $methodsCode$extraMethods
 
 // 4. 创建必要的接口（简化版本，避免参数冲突）
 $mockInterfaces = [
-    'Magento\Framework\App\Config\ScopeConfigInterface' => [
-        'getValue' => null,
-        'isSetFlag' => false
-    ],
+//    'Magento\Framework\App\Config\ScopeConfigInterface' => [
+//        'getValue' => null,
+//        'isSetFlag' => false
+//    ],
     'Magento\Payment\Gateway\Validator\ResultInterfaceFactory' => [
         'create' => null
     ]
@@ -138,11 +142,11 @@ foreach ($mockInterfaces as $interfaceName => $methods) {
 
 // 5. 创建必要的 Mock 类
 $mockClasses = [
-    'Magento\Sales\Model\Order' => [
-        'loadByIncrementId' => null, 'getId' => null, 'getPayment' => null, 'setId' => null,
-        'setPayment' => null, 'getIncrementId' => null, 'getState' => null, 'setState' => null,
-        'getStatus' => null, 'setStatus' => null, 'save' => null
-    ],
+//    'Magento\Sales\Model\Order' => [
+//        'loadByIncrementId' => null, 'getId' => null, 'getPayment' => null, 'setId' => null,
+//        'setPayment' => null, 'getIncrementId' => null, 'getState' => null, 'setState' => null,
+//        'getStatus' => null, 'setStatus' => null, 'save' => null
+//    ],
     'Magento\Sales\Model\OrderFactory' => ['create' => null],
     'Magento\Sales\Model\Order\Payment' => [
         'getAdditionalInformation' => null, 'setAdditionalInformation' => null, 'getMethod' => 'mock_method',
@@ -155,7 +159,7 @@ $mockClasses = [
     ],
     'Magento\Framework\DB\TransactionFactory' => ['create' => null],
     'Magento\Framework\DB\Transaction' => ['addObject' => null, 'save' => null],
-    'Magento\Framework\Controller\ResultFactory' => ['create' => null],
+//    'Magento\Framework\Controller\ResultFactory' => ['create' => null],
     'Magento\Framework\Controller\Result\Json' => ['setData' => null, 'setHttpResponseCode' => null],
     'Magento\Framework\Controller\Result\Redirect' => ['setUrl' => null, 'setPath' => null]
 ];
@@ -168,11 +172,11 @@ foreach ($mockClasses as $className => $methods) {
 if (interface_exists('Magento\Framework\App\Config\ScopeConfigInterface')) {
     if (!class_exists('MockScopeConfig')) {
         generateAndLoadClassSafe('
-        class MockScopeConfig implements Magento\Framework\App\Config\ScopeConfigInterface {
-            public function getValue($path, $scopeType = null, $scopeCode = null) { return null; }
-            public function isSetFlag($path, $scopeType = null, $scopeCode = null) { return false; }
+        class MockScopeConfig {
+            public function getValue($path = null, $scopeType = null, $scopeCode = null) { return null; }
+            public function isSetFlag($path = null, $scopeType = null, $scopeCode = null) { return false; }
         }
-        ');
+    ');
     }
 }
 
